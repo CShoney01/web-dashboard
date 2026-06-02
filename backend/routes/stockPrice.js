@@ -28,27 +28,32 @@ router.get('/search', async (req, res, next) => {
   } catch (e) { next(e) }
 })
 
-// GET /api/stock-price/quote?symbol=005930.KS — 시세 조회
+// GET /api/stock-price/quote?symbol=005930.KS — 시세 조회 (chart API)
 router.get('/quote', async (req, res, next) => {
   try {
     const { symbol } = req.query
     if (!symbol) return res.status(400).json({ error: 'symbol is required' })
 
-    const { data } = await axios.get('https://query1.finance.yahoo.com/v7/finance/quote', {
+    const { data } = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`, {
       timeout: TIMEOUT,
       headers: YF_HEADERS,
-      params: { symbols: symbol, lang: 'ko', region: 'KR' },
+      params: { interval: '1d', range: '1d' },
     })
 
-    const quote = data?.quoteResponse?.result?.[0]
-    if (!quote) return res.status(404).json({ error: '시세 데이터 없음' })
+    const meta = data?.chart?.result?.[0]?.meta
+    if (!meta?.regularMarketPrice) return res.status(404).json({ error: '시세 데이터 없음' })
+
+    const price     = meta.regularMarketPrice
+    const prevClose = meta.chartPreviousClose ?? meta.previousClose ?? price
+    const change    = price - prevClose
+    const changeRate = (change / prevClose) * 100
 
     res.json({
-      symbol:      quote.symbol,
-      price:       quote.regularMarketPrice,
-      change:      quote.regularMarketChange,
-      changeRate:  quote.regularMarketChangePercent,
-      market:      quote.fullExchangeName,
+      symbol:     meta.symbol,
+      price,
+      change,
+      changeRate,
+      market:     meta.fullExchangeName,
     })
   } catch (e) { next(e) }
 })

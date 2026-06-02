@@ -223,7 +223,7 @@ export default function StockWidget() {
           <div className="mt-3 pt-3 border-t border-border space-y-2">
             <div className="relative">
               <Input autoFocus type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                placeholder="종목명 검색..." className="h-9 text-sm pr-8" />
+                placeholder="영문으로 검색 (예: Samsung, Kakao)" className="h-9 text-sm pr-8" />
               {searching && (
                 <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
                   <div className="w-3.5 h-3.5 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
