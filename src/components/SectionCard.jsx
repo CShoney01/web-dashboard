@@ -61,7 +61,7 @@ function SortableWidgetItem({ id, widgetColors, setWidgetColor }) {
   // backgroundColor → 부모 div 자체도 같은 색으로 채워서 확실히 반영
   const colorStyle = colorDef.card
     ? { '--card': colorDef.card, backgroundColor: `hsl(${colorDef.card})` }
-    : {}
+    : { backgroundColor: 'hsl(var(--card))' }
 
   const dragStyle = {
     transform: CSS.Transform.toString(transform),

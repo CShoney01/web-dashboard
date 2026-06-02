@@ -27,7 +27,7 @@ export default function NewsWidget() {
         {loading && <SkeletonList />}
         {error && <p className="text-sm text-destructive">{error}</p>}
         {articles.length > 0 && (
-          <ul className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+          <ul className="space-y-2.5">
             {articles.map((a, i) => (
               <li key={i}>
                 <a
