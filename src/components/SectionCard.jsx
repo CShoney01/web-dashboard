@@ -121,15 +121,39 @@ function SortableWidgetItem({ id, widgetColors, setWidgetColor }) {
         document.body
       )}
 
-      {/* ── Expanded backdrop ── */}
+      {/* ── Expanded backdrop + modal (portal) ── */}
       {expanded && createPortal(
-        <div
-          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
-          onClick={() => setExpanded(false)}
-        />,
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+            onClick={() => setExpanded(false)}
+          />
+          <div
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50
+                       w-[90vw] max-w-2xl max-h-[85vh]
+                       rounded-xl border border-border shadow-2xl flex flex-col"
+            style={colorStyle}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-end p-2 flex-shrink-0 border-b border-border/50">
+              <button
+                className="p-1.5 rounded-md bg-background/80 border border-border text-muted-foreground hover:text-foreground hover:bg-background transition-all"
+                title="닫기 (Esc)"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); setExpanded(false) }}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              <Component />
+            </div>
+          </div>
+        </>,
         document.body
       )}
 
+      {/* ── Drag wrapper ── */}
       <div
         ref={setNodeRef}
         style={dragStyle}
@@ -137,26 +161,23 @@ function SortableWidgetItem({ id, widgetColors, setWidgetColor }) {
         {...listeners}
         className="relative group cursor-grab active:cursor-grabbing"
       >
-        <div
-          style={colorStyle}
-          className={
-            expanded
-              ? 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 ' +
-                'w-[90vw] max-w-2xl max-h-[85vh] overflow-y-auto ' +
-                'rounded-xl border border-border shadow-2xl'
-              : 'h-[240px] overflow-y-auto relative rounded-xl'
-          }
-          onPointerDown={expanded ? (e) => e.stopPropagation() : undefined}
-        >
-          <Component />
+        {/* 버튼 위치 기준이 되는 래퍼 (스크롤 영역 밖) */}
+        <div className="relative">
+          {/* 스크롤 가능한 위젯 콘텐츠 */}
+          <div
+            style={colorStyle}
+            className="h-[240px] overflow-y-auto rounded-xl"
+          >
+            <Component />
+          </div>
 
-          {/* 색상 피커 트리거 — 좌상단 (항상 동일 위치) */}
+          {/* 색상 피커 버튼 — 스크롤 영역 밖, 항상 좌상단 고정 */}
           <button
             className={[
               'absolute top-2.5 left-2.5 z-10',
               'w-4 h-4 rounded-full border border-white/30',
               'transition-all hover:scale-125',
-              expanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+              'opacity-0 group-hover:opacity-100',
             ].join(' ')}
             style={{ backgroundColor: colorDef.swatch }}
             title="위젯 색상 변경"
@@ -164,31 +185,18 @@ function SortableWidgetItem({ id, widgetColors, setWidgetColor }) {
             onClick={openPicker}
           />
 
-          {/* 닫기 버튼 — 확대 모드에서 우상단 (모달 표준 위치) */}
-          {expanded && (
-            <button
-              className="absolute top-2.5 right-2.5 z-10 p-1.5 rounded-md bg-background/80 border border-border text-muted-foreground hover:text-foreground hover:bg-background transition-all"
-              title="닫기 (Esc)"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => { e.stopPropagation(); setExpanded(false) }}
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* 확대 버튼 — 카드 모드에서 우하단 sticky 바 (위젯 버튼과 겹치지 않음) */}
-          {!expanded && (
-            <div className="sticky bottom-0 -mt-7 h-7 flex items-end justify-end pr-2 pb-1.5 bg-gradient-to-t from-card/70 to-transparent pointer-events-none">
-              <button
-                className="pointer-events-auto p-1 rounded text-muted-foreground/60 hover:text-foreground opacity-0 group-hover:opacity-100 transition-all"
-                title="전체화면으로 보기"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => { e.stopPropagation(); setExpanded(true) }}
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
+          {/* 확대 버튼 — 스크롤 영역 밖, 항상 우하단 고정 */}
+          <button
+            className="absolute bottom-2 right-2 z-10 p-1 rounded
+                       text-muted-foreground/60 hover:text-foreground
+                       bg-background/50 hover:bg-background/80
+                       opacity-0 group-hover:opacity-100 transition-all"
+            title="전체화면으로 보기"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); setExpanded(true) }}
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </>
