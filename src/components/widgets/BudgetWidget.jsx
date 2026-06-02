@@ -166,7 +166,7 @@ export default function BudgetWidget() {
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-0.5">금액 (원)</label>
-                  <Input type="number" min="0" value={form.amount} onChange={e => setForm(f=>({...f,amount:e.target.value}))} placeholder="0" className="h-8 text-sm" />
+                  <Input type="number" min="0" value={form.amount} onChange={e => setForm(f=>({...f,amount:e.target.value}))} placeholder="0" className="h-8 text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-0.5">메모</label>

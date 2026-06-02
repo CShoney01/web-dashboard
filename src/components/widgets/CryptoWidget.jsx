@@ -208,11 +208,11 @@ export default function CryptoWidget() {
                     <div className="flex gap-2">
                       <div className="flex-1">
                         <label className="text-xs text-muted-foreground block mb-0.5">수량</label>
-                        <Input type="number" min="0" step="any" value={editQty} onChange={e => setEditQty(e.target.value)} placeholder="0" className="h-8 text-sm" />
+                        <Input type="number" min="0" step="any" value={editQty} onChange={e => setEditQty(e.target.value)} placeholder="0" className="h-8 text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
                       </div>
                       <div className="flex-1">
                         <label className="text-xs text-muted-foreground block mb-0.5">평균단가 (원)</label>
-                        <Input type="number" min="0" value={editAvg} onChange={e => setEditAvg(e.target.value)} placeholder="0" className="h-8 text-sm" />
+                        <Input type="number" min="0" value={editAvg} onChange={e => setEditAvg(e.target.value)} placeholder="0" className="h-8 text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
                       </div>
                     </div>
                     <div className="flex gap-2">
