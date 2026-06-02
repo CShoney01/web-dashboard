@@ -47,6 +47,17 @@ export const useWidgetStore = create(
           widgetColors: { ...state.widgetColors, [id]: colorId },
         })),
     }),
-    { name: 'dashboard-widget-config' }
+    {
+      name: 'dashboard-widget-config',
+      merge: (persistedState, currentState) => {
+        const storedIds = new Set(persistedState.widgets?.map((w) => w.id) ?? [])
+        const newWidgets = DEFAULT_WIDGETS.filter((w) => !storedIds.has(w.id))
+        return {
+          ...currentState,
+          ...persistedState,
+          widgets: [...(persistedState.widgets ?? currentState.widgets), ...newWidgets],
+        }
+      },
+    }
   )
 )
