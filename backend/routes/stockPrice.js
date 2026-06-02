@@ -30,6 +30,7 @@ router.get('/price', async (req, res, next) => {
         timeout: TIMEOUT,
         params: { serviceKey: API_KEY, numOfRows: 5, pageNo: 1, resultType: 'json', itmsNm: name, basDt: weekdayDate(i) },
       })
+      console.log(`[KRX price] name=${name} i=${i} resultCode=${data?.response?.header?.resultCode} items=${JSON.stringify(data?.response?.body?.items)}`)
       const match = toItems(data?.response?.body?.items?.item).find(it => it.itmsNm === name)
       if (match) return res.json(match)
     }
