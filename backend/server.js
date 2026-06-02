@@ -12,7 +12,7 @@ import rssRouter            from './routes/rss.js'
 import widgetSettingsRouter from './routes/widgetSettings.js'
 
 const app  = express()
-const PORT = process.env.PORT ?? 4000
+const PORT = process.env.API_PORT ?? 4000
 
 // ── Middleware ────────────────────────────────────────────────
 app.use(helmet())
