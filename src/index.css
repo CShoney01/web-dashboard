@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 96%;      /* 밝은 블루-그레이 배경 */
+    --foreground: 222 47% 11%;      /* 진한 네이비 텍스트 */
+
+    --card: 0 0% 100%;              /* 흰 카드 */
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 217 91% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 16% 92%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 220 16% 92%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 220 16% 88%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 86%;
+    --input: 220 13% 86%;
+    --ring: 217 91% 55%;
+
+    --radius: 0.75rem;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-black/15 rounded-full;
+  }
+}
+
+@layer components {
+  .input {
+    @apply bg-white border border-border rounded-lg px-3 py-2 text-sm text-foreground
+           placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40
+           focus:border-primary/50 w-full transition-colors;
+  }
+}

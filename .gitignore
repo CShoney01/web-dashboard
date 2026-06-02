@@ -1,0 +1,15 @@
+node_modules
+dist
+.env
+.env.local
+backend/.env
+.DS_Store
+*.log
+
+# Claude Code
+.claude/
+
+# 임시 스크립트 및 스크린샷
+check-*.cjs
+check-*.mjs
+screenshot_*.png
