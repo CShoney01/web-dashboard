@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 
-const CLIENT_ID = import.meta.env.VITE_NAVER_CLIENT_ID
-const CLIENT_SECRET = import.meta.env.VITE_NAVER_CLIENT_SECRET
-const QUERY = import.meta.env.VITE_NEWS_QUERY || '최신'
+const QUERY = '최신'
 
 export default function NewsWidget() {
   const [articles, setArticles] = useState([])
@@ -12,19 +10,8 @@ export default function NewsWidget() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!CLIENT_ID || !CLIENT_SECRET) {
-      setError('네이버 API 키가 없습니다 (.env 설정 필요)')
-      setLoading(false)
-      return
-    }
     axios
-      .get('/naver-news', {
-        params: { query: QUERY, display: 8, sort: 'date' },
-        headers: {
-          'X-Naver-Client-Id': CLIENT_ID,
-          'X-Naver-Client-Secret': CLIENT_SECRET,
-        },
-      })
+      .get('/api/naver-news', { params: { query: QUERY, display: 8, sort: 'date' } })
       .then((res) => setArticles(res.data.items ?? []))
       .catch(() => setError('뉴스 데이터를 불러올 수 없습니다'))
       .finally(() => setLoading(false))

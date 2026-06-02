@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 
-const API_KEY = import.meta.env.VITE_EXCHANGE_API_KEY
-const BASE = import.meta.env.VITE_EXCHANGE_BASE || 'USD'
+const BASE = 'USD'
 const TARGETS = ['KRW', 'JPY', 'EUR', 'CNY']
 
 export default function ExchangeWidget() {
@@ -13,16 +12,11 @@ export default function ExchangeWidget() {
   const [updated, setUpdated] = useState(null)
 
   useEffect(() => {
-    if (!API_KEY) {
-      setError('API 키가 없습니다 (.env 설정 필요)')
-      setLoading(false)
-      return
-    }
     axios
-      .get(`https://v6.exchangerate-api.com/v6/${API_KEY}/latest/${BASE}`)
+      .get('/api/exchange', { params: { base: BASE } })
       .then((res) => {
-        setRates(res.data.conversion_rates)
-        setUpdated(new Date(res.data.time_last_update_utc).toLocaleDateString('ko-KR'))
+        setRates(res.data.rates)
+        setUpdated(new Date().toLocaleDateString('ko-KR'))
       })
       .catch(() => setError('환율 데이터를 불러올 수 없습니다'))
       .finally(() => setLoading(false))

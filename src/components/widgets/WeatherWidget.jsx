@@ -5,8 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import api from '@/lib/api'
 
-const API_KEY      = import.meta.env.VITE_WEATHER_API_KEY
-const DEFAULT_CITY = import.meta.env.VITE_WEATHER_CITY || 'Seoul'
+const DEFAULT_CITY = 'Seoul'
 const DAY_KO       = ['일', '월', '화', '수', '목', '금', '토']
 
 // 다음 24시간 — 3시간 간격 8슬롯
@@ -68,7 +67,6 @@ export default function WeatherWidget() {
   // 2. 도시가 결정되면 날씨 조회
   useEffect(() => {
     if (!city) return
-    if (!API_KEY) { setError('VITE_WEATHER_API_KEY가 없습니다'); return }
 
     setLoading(true)
     setCurrent(null)
@@ -77,12 +75,8 @@ export default function WeatherWidget() {
     setError(null)
 
     Promise.all([
-      axios.get('https://api.openweathermap.org/data/2.5/weather', {
-        params: { q: city, appid: API_KEY, units: 'metric', lang: 'kr' },
-      }),
-      axios.get('https://api.openweathermap.org/data/2.5/forecast', {
-        params: { q: city, appid: API_KEY, units: 'metric', lang: 'kr' },
-      }),
+      axios.get('/api/weather',          { params: { city } }),
+      axios.get('/api/weather/forecast', { params: { city } }),
     ])
       .then(([c, f]) => {
         setCurrent(c.data)
