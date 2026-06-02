@@ -3,8 +3,7 @@ import axios from 'axios'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
-const SCOPE     = 'https://www.googleapis.com/auth/calendar.readonly'
+const SCOPE = 'https://www.googleapis.com/auth/calendar.readonly'
 
 const LS_TOKEN  = 'gc_access_token'
 const LS_EXPIRY = 'gc_token_expiry'
@@ -62,6 +61,7 @@ function dateLabel(dateStr) {
 
 // ── 컴포넌트 ───────────────────────────────────────────────────
 export default function CalendarWidget() {
+  const [clientId,    setClientId]    = useState(null)
   const [token,       setToken]       = useState(() => loadSavedToken())
   const [autoLoading, setAutoLoading] = useState(false)
   const [events,      setEvents]      = useState([])
@@ -71,8 +71,13 @@ export default function CalendarWidget() {
   const silentRef       = useRef(null)
   const silentTimerRef  = useRef(null)
 
+  useEffect(() => {
+    axios.get('/api/config').then(r => setClientId(r.data.googleClientId)).catch(() => {})
+  }, [])
+
   // ── GIS 초기화 ──────────────────────────────────────────────
   useEffect(() => {
+    const CLIENT_ID = clientId
     if (!CLIENT_ID) return
 
     // 저장된 토큰 없으면 silent 재인증 시도 중 표시
@@ -121,7 +126,7 @@ export default function CalendarWidget() {
       clearTimeout(silentTimerRef.current)
       try { document.head.removeChild(script) } catch { /* ignore */ }
     }
-  }, [])
+  }, [clientId])
 
   // ── 토큰 있으면 캘린더 조회 ───────────────────────────────────
   const fetchEvents = useCallback((accessToken) => {
@@ -162,7 +167,7 @@ export default function CalendarWidget() {
   }
 
   // ── CLIENT_ID 미설정 안내 ────────────────────────────────────
-  if (!CLIENT_ID) {
+  if (!clientId) {
     return (
       <Card className="h-full flex flex-col">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 px-4 pt-4 pb-3">

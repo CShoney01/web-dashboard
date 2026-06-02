@@ -19,9 +19,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Plus, X, Pencil } from 'lucide-react'
 
-const API_KEY  = import.meta.env.VITE_KRX_API_KEY
-const BASE_URL = 'https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo'
-
 function useDebounce(value, delay) {
   const [debounced, setDebounced] = useState(value)
   useEffect(() => {
@@ -31,47 +28,14 @@ function useDebounce(value, delay) {
   return debounced
 }
 
-function toItems(raw) {
-  if (!raw) return []
-  return Array.isArray(raw) ? raw : [raw]
-}
-
-function weekdayDate(daysBack = 0) {
-  const d = new Date()
-  d.setDate(d.getDate() - daysBack)
-  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1)
-  return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0')
-}
-
 async function fetchStockByName(name) {
-  for (let i = 0; i <= 4; i++) {
-    const { data } = await axios.get(BASE_URL, {
-      params: { serviceKey: API_KEY, numOfRows: 5, pageNo: 1, resultType: 'json', itmsNm: name, basDt: weekdayDate(i) },
-    })
-    const match = toItems(data?.response?.body?.items?.item).find(it => it.itmsNm === name)
-    if (match) return match
-  }
-  return null
-}
-
-let _stockCache = null
-async function loadAllStocks() {
-  const today = weekdayDate(0)
-  if (_stockCache?.date === today) return _stockCache.items
-  for (let i = 0; i <= 4; i++) {
-    const basDt = weekdayDate(i)
-    const { data } = await axios.get(BASE_URL, {
-      params: { serviceKey: API_KEY, numOfRows: 3000, pageNo: 1, resultType: 'json', basDt },
-    })
-    const items = toItems(data?.response?.body?.items?.item)
-    if (items.length > 0) { _stockCache = { date: basDt, items }; return items }
-  }
-  return []
+  const { data } = await axios.get('/api/stock-price/price', { params: { name } })
+  return data
 }
 
 async function searchByName(query) {
-  const all = await loadAllStocks()
-  return all.filter(it => it.itmsNm?.includes(query.trim()))
+  const { data } = await axios.get('/api/stock-price/search', { params: { query } })
+  return data
 }
 
 export default function StockWidget() {
@@ -100,7 +64,6 @@ export default function StockWidget() {
 
   // stocks가 바뀌면 미조회 종목만 KRX API 호출 (기존 로직 유지)
   useEffect(() => {
-    if (!API_KEY) { setApiError('API 키 없음 (VITE_KRX_API_KEY)'); return }
     const toFetch = stocks.filter(s => !fetchedRef.current.has(s.code))
     if (toFetch.length === 0) return
 

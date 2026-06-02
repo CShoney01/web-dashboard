@@ -10,6 +10,12 @@ import cryptosRouter        from './routes/cryptos.js'
 import budgetRouter         from './routes/budget.js'
 import rssRouter            from './routes/rss.js'
 import widgetSettingsRouter from './routes/widgetSettings.js'
+import weatherRouter        from './routes/weather.js'
+import exchangeRouter       from './routes/exchange.js'
+import naverNewsRouter      from './routes/naverNews.js'
+import cryptoPriceRouter    from './routes/cryptoPrice.js'
+import stockPriceRouter     from './routes/stockPrice.js'
+import configRouter         from './routes/config.js'
 
 const app  = express()
 const PORT = process.env.API_PORT ?? 4000
@@ -28,6 +34,12 @@ app.use('/api/cryptos',         cryptosRouter)
 app.use('/api/budget_expenses', budgetRouter)
 app.use('/api/rss_feeds',       rssRouter)
 app.use('/api/widget_settings', widgetSettingsRouter)
+app.use('/api/weather',        weatherRouter)
+app.use('/api/exchange',       exchangeRouter)
+app.use('/api/naver-news',     naverNewsRouter)
+app.use('/api/crypto-price',   cryptoPriceRouter)
+app.use('/api/stock-price',    stockPriceRouter)
+app.use('/api/config',         configRouter)
 
 // ── Health check ─────────────────────────────────────────────
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
