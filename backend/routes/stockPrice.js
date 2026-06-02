@@ -4,6 +4,7 @@ import axios from 'axios'
 const router = Router()
 const API_KEY  = process.env.KRX_API_KEY
 const BASE_URL = 'https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo'
+const TIMEOUT  = 6000  // KRX API 요청당 최대 6초
 
 function toItems(raw) {
   if (!raw) return []
@@ -24,8 +25,9 @@ router.get('/price', async (req, res, next) => {
     const { name } = req.query
     if (!name) return res.status(400).json({ error: 'name is required' })
 
-    for (let i = 0; i <= 4; i++) {
+    for (let i = 0; i <= 2; i++) {
       const { data } = await axios.get(BASE_URL, {
+        timeout: TIMEOUT,
         params: { serviceKey: API_KEY, numOfRows: 5, pageNo: 1, resultType: 'json', itmsNm: name, basDt: weekdayDate(i) },
       })
       const match = toItems(data?.response?.body?.items?.item).find(it => it.itmsNm === name)
@@ -47,9 +49,10 @@ router.get('/search', async (req, res, next) => {
 
     const today = weekdayDate(0)
     if (!_cache || _cache.date !== today) {
-      for (let i = 0; i <= 4; i++) {
+      for (let i = 0; i <= 2; i++) {
         const basDt = weekdayDate(i)
         const { data } = await axios.get(BASE_URL, {
+          timeout: TIMEOUT,
           params: { serviceKey: API_KEY, numOfRows: 3000, pageNo: 1, resultType: 'json', basDt },
         })
         const items = toItems(data?.response?.body?.items?.item)

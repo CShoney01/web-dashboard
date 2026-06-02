@@ -29,12 +29,12 @@ function useDebounce(value, delay) {
 }
 
 async function fetchStockByName(name) {
-  const { data } = await axios.get('/api/stock-price/price', { params: { name } })
+  const { data } = await axios.get('/api/stock-price/price', { params: { name }, timeout: 20000 })
   return data
 }
 
 async function searchByName(query) {
-  const { data } = await axios.get('/api/stock-price/search', { params: { query } })
+  const { data } = await axios.get('/api/stock-price/search', { params: { query }, timeout: 20000 })
   return data
 }
 
@@ -73,7 +73,9 @@ export default function StockWidget() {
     toFetch.forEach(({ code, name }) => {
       fetchStockByName(name)
         .then(item => { if (item) setStockData(prev => ({ ...prev, [code]: item })) })
-        .catch(() => {})
+        .catch((e) => {
+          if (e.code === 'ECONNABORTED') setApiError('시세 조회 시간 초과 — 잠시 후 새로고침하세요')
+        })
         .finally(() => setLoadingSet(prev => { const n = new Set(prev); n.delete(code); return n }))
     })
   }, [stocks])
