@@ -62,7 +62,7 @@
 
 Google Calendar를 제외한 모든 외부 API 호출은 보안을 위해 **백엔드(Express)에서만 수행**한다. 프론트엔드는 `/api/*` 엔드포인트만 호출하며, API 키는 서버 환경변수에만 존재한다.
 
-Google Calendar는 사용자가 직접 Google 계정에 로그인하는 OAuth 2.0 인증 흐름이 브라우저에서 Google과 직접 통신해야 하는 구조이므로 프론트엔드에서 처리한다. 이때 사용하는 `GOOGLE_CLIENT_ID`는 OAuth 규격상 공개값으로, 서버에서 `/api/config` 엔드포인트를 통해 런타임에 전달받는다.
+Google Calendar는 사용자가 직접 Google 계정에 로그인하는 OAuth 2.0 인증 흐름이 브라우저에서 Google과 직접 통신해야 하는 구조이므로 프론트엔드에서 처리한다. 이때 사용하는 `GOOGLE_CLIENT_ID`는 OAuth 2.0 규격에서 의도적으로 공개하도록 설계된 값으로, 클라이언트에 노출되어도 보안상 전혀 문제가 없다. 인증의 보안은 Client ID가 아닌 Google 서버와의 토큰 교환 과정에서 보장된다. 해당 값은 서버의 `/api/config` 엔드포인트를 통해 런타임에 전달받는다.
 
 | API              | 용도                | 인증 방식                                                   | 백엔드 엔드포인트                                           |
 | ---------------- | ------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- |
@@ -157,7 +157,7 @@ Render에 배포되는 Docker 이미지는 **프론트엔드, 백엔드, 웹 서
 
 ## 4. CI/CD 계획
 
-GitHub Actions만을 사용하여 CI/CD를 구성한다. Render의 자동 배포 기능은 사용하지 않으며, 배포는 반드시 GitHub Actions의 Deploy Hook 호출을 통해서만 이루어진다.
+GitHub Actions만을 사용하여 CI/CD를 구성한다. 배포는 GitHub Actions의 Deploy Hook 호출을 통해서만 이루어진다.
 
 ### 흐름
 
@@ -221,4 +221,3 @@ jobs:
 
 - Render 서비스 생성 후 **Deploy Hook URL** 발급
 - GitHub Repository → **Settings → Secrets → Actions**에 `RENDER_DEPLOY_HOOK_URL` 등록
-- Render 대시보드 → **Settings → Auto-Deploy → No** 설정 (GitHub Actions 외의 경로로 배포되지 않도록)
