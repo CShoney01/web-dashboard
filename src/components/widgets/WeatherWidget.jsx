@@ -99,7 +99,7 @@ export default function WeatherWidget() {
     if (!newCity) return
     try {
       await api.patch('/api/widget_settings/weather', { settings: { city: newCity } })
-    } catch {}
+    } catch { /* ignore */ }
     setCity(newCity)
     setEditing(false)
   }

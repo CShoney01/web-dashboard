@@ -75,7 +75,7 @@ export default function MigratePanel({ onClose }) {
         push(`📝 할일 ${data.todos.length}개 마이그레이션...`)
         let ok = 0
         for (const t of data.todos) {
-          try { await api.post('/api/todos', { text: t.text, done: t.done ?? false }); ok++ } catch {}
+          try { await api.post('/api/todos', { text: t.text, done: t.done ?? false }); ok++ } catch { /* ignore */ }
         }
         push(`   ${ok}/${data.todos.length} 완료`)
       }
@@ -85,7 +85,7 @@ export default function MigratePanel({ onClose }) {
         push(`📋 메모 ${data.memos.length}개 마이그레이션...`)
         let ok = 0
         for (const m of data.memos) {
-          try { await api.post('/api/memos', { content: m.text ?? m.content }); ok++ } catch {}
+          try { await api.post('/api/memos', { content: m.text ?? m.content }); ok++ } catch { /* ignore */ }
         }
         push(`   ${ok}/${data.memos.length} 완료`)
       }
@@ -95,7 +95,7 @@ export default function MigratePanel({ onClose }) {
         push(`🔖 북마크 ${data.bookmarks.length}개 마이그레이션...`)
         let ok = 0
         for (const b of data.bookmarks) {
-          try { await api.post('/api/bookmarks', { title: b.title, url: b.url }); ok++ } catch {}
+          try { await api.post('/api/bookmarks', { title: b.title, url: b.url }); ok++ } catch { /* ignore */ }
         }
         push(`   ${ok}/${data.bookmarks.length} 완료`)
       }
@@ -112,7 +112,7 @@ export default function MigratePanel({ onClose }) {
               await api.patch(`/api/stocks/${created.id}`, { qty: h.qty, avg_price: h.avgPrice })
             }
             ok++
-          } catch {}
+          } catch { /* ignore */ }
         }
         push(`   ${ok}/${data.stockWatch.length} 완료`)
       }
@@ -131,7 +131,7 @@ export default function MigratePanel({ onClose }) {
               await api.patch(`/api/cryptos/${created.id}`, { qty: h.qty, avg_price: h.avgPrice })
             }
             ok++
-          } catch {}
+          } catch { /* ignore */ }
         }
         push(`   ${ok}/${data.cryptoWatch.length} 완료`)
       }
@@ -146,7 +146,7 @@ export default function MigratePanel({ onClose }) {
               date: b.date, category: b.category, amount: b.amount, memo: b.memo ?? null,
             })
             ok++
-          } catch {}
+          } catch { /* ignore */ }
         }
         push(`   ${ok}/${data.budget.length} 완료`)
       }
@@ -156,7 +156,7 @@ export default function MigratePanel({ onClose }) {
         push(`📡 RSS ${data.rssFeeds.length}개 마이그레이션...`)
         let ok = 0
         for (const f of data.rssFeeds) {
-          try { await api.post('/api/rss_feeds', { url: f.url, name: f.name }); ok++ } catch {}
+          try { await api.post('/api/rss_feeds', { url: f.url, name: f.name }); ok++ } catch { /* ignore */ }
         }
         push(`   ${ok}/${data.rssFeeds.length} 완료`)
       }

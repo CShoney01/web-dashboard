@@ -67,7 +67,7 @@ export default function WidgetGrid() {
   // Clamp if pages shrink (e.g. widget disabled)
   useEffect(() => {
     if (currentPage >= totalPages) setCurrentPage(Math.max(0, totalPages - 1))
-  }, [totalPages])
+  }, [totalPages, currentPage])
 
   const prev = useCallback(() => setCurrentPage((p) => Math.max(0, p - 1)), [])
   const next = useCallback(() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1)), [totalPages])
@@ -128,7 +128,7 @@ export default function WidgetGrid() {
             className="flex transition-transform duration-300 ease-in-out"
             style={{ transform: `translateX(-${page * 100}%)` }}
           >
-            {pages.map((pg, i) => (
+            {pages.map((pg) => (
               <div key={pg.type === 'section' ? pg.id : 'standalone'} className="w-full flex-shrink-0">
                 {pg.type === 'section' ? (
                   <SectionCard

@@ -86,7 +86,7 @@ export default function QuoteWidget() {
             오늘의 명언
           </p>
           <blockquote className="text-sm text-card-foreground leading-relaxed">
-            "{quote.q}"
+            &ldquo;{quote.q}&rdquo;
           </blockquote>
           <p className="text-xs text-muted-foreground mt-1.5 text-right">— {quote.a}</p>
         </div>

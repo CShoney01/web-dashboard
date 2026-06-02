@@ -119,7 +119,7 @@ export default function CalendarWidget() {
     document.head.appendChild(script)
     return () => {
       clearTimeout(silentTimerRef.current)
-      try { document.head.removeChild(script) } catch {}
+      try { document.head.removeChild(script) } catch { /* ignore */ }
     }
   }, [])
 
