@@ -1,5 +1,5 @@
 # ── Stage 1: Build frontend ──────────────────────────────────
-FROM node:20-alpine AS frontend-builder
+FROM node:22-alpine AS frontend-builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -7,13 +7,13 @@ COPY . .
 RUN npm run build
 
 # ── Stage 2: Install backend production deps ─────────────────
-FROM node:20-alpine AS backend-builder
+FROM node:22-alpine AS backend-builder
 WORKDIR /backend
 COPY backend/package*.json ./
 RUN npm ci --omit=dev
 
 # ── Stage 3: Final image (Nginx + Node + supervisord) ────────
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 
 RUN apk add --no-cache nginx supervisor
 
