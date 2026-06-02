@@ -1,12 +1,22 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import api from '@/lib/api'
 
 const DEFAULT_CITY = 'Seoul'
 const DAY_KO       = ['일', '월', '화', '수', '목', '금', '토']
+
+const CITIES = [
+  { label: '서울', value: 'Seoul' },
+  { label: '부산', value: 'Busan' },
+  { label: '대구', value: 'Daegu' },
+  { label: '인천', value: 'Incheon' },
+  { label: '광주', value: 'Gwangju' },
+  { label: '대전', value: 'Daejeon' },
+  { label: '울산', value: 'Ulsan' },
+  { label: '세종', value: 'Sejong' },
+]
+
 
 // 다음 24시간 — 3시간 간격 8슬롯
 function parseHourly(list) {
@@ -47,15 +57,13 @@ function parseWeekly(list) {
 }
 
 export default function WeatherWidget() {
-  const [tab,       setTab]       = useState('now')
-  const [city,      setCity]      = useState(null)
-  const [editing,   setEditing]   = useState(false)
-  const [cityInput, setCityInput] = useState('')
-  const [current,   setCurrent]   = useState(null)
-  const [hourly,    setHourly]    = useState(null)
-  const [weekly,    setWeekly]    = useState(null)
-  const [error,     setError]     = useState(null)
-  const [loading,   setLoading]   = useState(false)
+  const [tab,     setTab]     = useState('now')
+  const [city,    setCity]    = useState(null)
+  const [current, setCurrent] = useState(null)
+  const [hourly,  setHourly]  = useState(null)
+  const [weekly,  setWeekly]  = useState(null)
+  const [error,   setError]   = useState(null)
+  const [loading, setLoading] = useState(false)
 
   // 1. widget_settings에서 도시 읽기
   useEffect(() => {
@@ -87,20 +95,13 @@ export default function WeatherWidget() {
       .finally(() => setLoading(false))
   }, [city])
 
-  // 도시 저장
-  const saveCity = async () => {
-    const newCity = cityInput.trim()
-    if (!newCity) return
+  // 도시 변경 — 드롭다운 선택 즉시 저장
+  const handleCityChange = async (e) => {
+    const newCity = e.target.value
+    setCity(newCity)
     try {
       await api.patch('/api/widget_settings/weather', { settings: { city: newCity } })
     } catch { /* ignore */ }
-    setCity(newCity)
-    setEditing(false)
-  }
-
-  const handleCityKeyDown = e => {
-    if (e.key === 'Enter') saveCity()
-    if (e.key === 'Escape') setEditing(false)
   }
 
   return (
@@ -108,28 +109,15 @@ export default function WeatherWidget() {
       <CardHeader className="flex flex-row items-center justify-between space-y-0 px-4 pt-4 pb-3">
         <CardTitle className="text-sm font-bold text-foreground">🌤️ 날씨</CardTitle>
         <div className="flex items-center gap-2">
-          {editing ? (
-            <div className="flex items-center gap-1">
-              <Input
-                value={cityInput}
-                onChange={e => setCityInput(e.target.value)}
-                onKeyDown={handleCityKeyDown}
-                placeholder="도시명 (영문)"
-                className="h-6 text-xs w-28 px-2"
-                autoFocus
-              />
-              <Button onClick={saveCity} size="sm" className="h-6 px-2 text-xs">저장</Button>
-              <Button onClick={() => setEditing(false)} variant="ghost" size="sm" className="h-6 px-2 text-xs">취소</Button>
-            </div>
-          ) : (
-            <button
-              onClick={() => { setCityInput(city ?? ''); setEditing(true) }}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              title="클릭하여 도시 변경"
-            >
-              {city ?? '...'}
-            </button>
-          )}
+          <select
+            value={city ?? DEFAULT_CITY}
+            onChange={handleCityChange}
+            className="text-xs text-muted-foreground bg-transparent border-none outline-none cursor-pointer hover:text-foreground transition-colors"
+          >
+            {CITIES.map(c => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
+          </select>
           <div className="flex rounded-md overflow-hidden border border-border">
             {[['now', '현재'], ['week', '주간']].map(([key, label]) => (
               <button
