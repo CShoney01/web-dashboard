@@ -5,16 +5,18 @@ import { Button } from '@/components/ui/button'
 
 const SCOPE = 'https://www.googleapis.com/auth/calendar.readonly'
 
-const LS_TOKEN  = 'gc_access_token'
-const LS_EXPIRY = 'gc_token_expiry'
+const LS_TOKEN   = 'gc_access_token'
+const LS_EXPIRY  = 'gc_token_expiry'
+const LS_SESSION = 'gc_had_session'
 
 const DAY_KO   = ['일', '월', '화', '수', '목', '금', '토']
 const MONTH_KO = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
 
 // ── 토큰 저장/불러오기 ──────────────────────────────────────────
 function saveToken(token, expiresIn = 3599) {
-  localStorage.setItem(LS_TOKEN,  token)
-  localStorage.setItem(LS_EXPIRY, String(Date.now() + (expiresIn - 60) * 1000))
+  localStorage.setItem(LS_TOKEN,   token)
+  localStorage.setItem(LS_EXPIRY,  String(Date.now() + (expiresIn - 60) * 1000))
+  localStorage.setItem(LS_SESSION, 'true')
 }
 
 function loadSavedToken() {
@@ -23,9 +25,14 @@ function loadSavedToken() {
   return token && Date.now() < expiry ? token : null
 }
 
-function clearSavedToken() {
+function hadPreviousSession() {
+  return localStorage.getItem(LS_SESSION) === 'true'
+}
+
+function clearSavedToken({ clearSession = false } = {}) {
   localStorage.removeItem(LS_TOKEN)
   localStorage.removeItem(LS_EXPIRY)
+  if (clearSession) localStorage.removeItem(LS_SESSION)
 }
 
 // ── 날짜 포맷 ──────────────────────────────────────────────────
@@ -80,8 +87,8 @@ export default function CalendarWidget() {
     const CLIENT_ID = clientId
     if (!CLIENT_ID) return
 
-    // 저장된 토큰 없으면 silent 재인증 시도 중 표시
-    if (!loadSavedToken()) setAutoLoading(true)
+    // 이전 세션 이력이 있고 토큰이 만료됐을 때만 silent 재인증 시도 중 표시
+    if (!loadSavedToken() && hadPreviousSession()) setAutoLoading(true)
 
     const script = document.createElement('script')
     script.src   = 'https://accounts.google.com/gsi/client'
@@ -114,8 +121,8 @@ export default function CalendarWidget() {
         },
       })
 
-      // 저장된 토큰 없으면 silent 재인증 시도 (4초 내 응답 없으면 포기)
-      if (!loadSavedToken()) {
+      // 이전 세션 이력이 있고 토큰이 만료됐을 때만 silent 재인증 시도
+      if (!loadSavedToken() && hadPreviousSession()) {
         silentTimerRef.current = setTimeout(() => setAutoLoading(false), 4000)
         silentRef.current.requestAccessToken()
       }
@@ -160,7 +167,7 @@ export default function CalendarWidget() {
 
   // ── 로그아웃 ─────────────────────────────────────────────────
   const handleLogout = () => {
-    clearSavedToken()
+    clearSavedToken({ clearSession: true })
     setToken(null)
     setEvents([])
     setError(null)
