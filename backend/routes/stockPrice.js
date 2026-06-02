@@ -21,8 +21,8 @@ router.get('/search', async (req, res, next) => {
     })
 
     const results = (data.quotes ?? [])
-      .filter(q => q.exchDisp && (q.exchDisp.includes('KSC') || q.exchDisp.includes('KOE') || q.exchange === 'KSC' || q.exchange === 'KOE'))
-      .map(q => ({ symbol: q.symbol, name: q.shortname || q.longname || q.symbol, exchange: q.exchDisp }))
+      .filter(q => q.symbol && (q.symbol.endsWith('.KS') || q.symbol.endsWith('.KQ')))
+      .map(q => ({ symbol: q.symbol, name: q.shortname || q.longname || q.symbol, exchange: q.symbol.endsWith('.KS') ? 'KOSPI' : 'KOSDAQ' }))
 
     res.json(results)
   } catch (e) { next(e) }
