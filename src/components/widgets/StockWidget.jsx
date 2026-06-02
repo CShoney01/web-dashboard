@@ -1,16 +1,3 @@
-/**
- * [변경 전]
- *   useLocalStorage('stock-watchlist', DEFAULT)  → [{ code, name }]
- *   useLocalStorage('stock-holdings',  {})        → { code: { qty, avgPrice } }
- *   → 관심종목·보유 정보가 각각 다른 localStorage 키에 분리 저장
- *
- * [변경 후]
- *   GET/POST/PATCH/DELETE /api/stocks → [{ id, code, name, qty, avg_price, sort_order }]
- *   → 단일 API 응답에 관심종목과 보유 정보가 통합, Supabase에 저장
- *
- * 필드 변화: avgPrice → avg_price (snake_case), id는 UUID로 변경
- * 함수 변화: removeStock(code) → removeStock(stock), pnl(code) → pnl(stock)
- */
 import { useEffect, useState, useRef } from 'react'
 import axios from 'axios'
 import api from '@/lib/api'
@@ -28,41 +15,43 @@ function useDebounce(value, delay) {
   return debounced
 }
 
-async function fetchStockByName(name) {
-  const { data } = await axios.get('/api/stock-price/price', { params: { name }, timeout: 20000 })
-  return data
+// Yahoo Finance 시세 조회 — symbol: '005930.KS'
+async function fetchQuote(symbol) {
+  const { data } = await axios.get('/api/stock-price/quote', { params: { symbol }, timeout: 10000 })
+  return data  // { price, change, changeRate, market }
 }
 
-async function searchByName(query) {
-  const { data } = await axios.get('/api/stock-price/search', { params: { query }, timeout: 20000 })
-  return data
+// Yahoo Finance 종목 검색
+async function searchStocks(query) {
+  const { data } = await axios.get('/api/stock-price/search', { params: { query }, timeout: 10000 })
+  return data  // [{ symbol, name, exchange }]
 }
 
 export default function StockWidget() {
-  // [변경] 두 개의 localStorage → 하나의 API 상태
-  const [stocks,     setStocks]     = useState([])   // [{ id, code, name, qty, avg_price }]
-  const [stockData,  setStockData]  = useState({})   // { code: KRX API 응답 }
-  const [loadingSet, setLoadingSet] = useState(new Set())
-  const [apiError,   setApiError]   = useState(null)
+  const [stocks,      setStocks]      = useState([])   // Supabase: [{ id, code(=symbol), name, qty, avg_price }]
+  const [quotes,      setQuotes]      = useState({})   // { symbol: { price, change, changeRate, market } }
+  const [loadingSet,  setLoadingSet]  = useState(new Set())
+  const [apiError,    setApiError]    = useState(null)
 
-  const [showSearch,     setShowSearch]     = useState(false)
-  const [searchQuery,    setSearchQuery]    = useState('')
-  const [searchResults,  setSearchResults]  = useState([])
-  const [searching,      setSearching]      = useState(false)
-  const [editingCode,    setEditingCode]    = useState(null)
-  const [editQty,        setEditQty]        = useState('')
-  const [editAvg,        setEditAvg]        = useState('')
+  const [showSearch,    setShowSearch]    = useState(false)
+  const [searchQuery,   setSearchQuery]   = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searching,     setSearching]     = useState(false)
+  const [editingCode,   setEditingCode]   = useState(null)
+  const [editQty,       setEditQty]       = useState('')
+  const [editAvg,       setEditAvg]       = useState('')
 
-  const fetchedRef    = useRef(new Set())
+  const fetchedRef     = useRef(new Set())
   const debouncedQuery = useDebounce(searchQuery, 450)
 
+  // DB에서 관심종목 로드
   useEffect(() => {
     api.get('/api/stocks')
       .then(r => setStocks(r.data))
       .catch(() => setApiError('주식 목록을 불러올 수 없습니다'))
   }, [])
 
-  // stocks가 바뀌면 미조회 종목만 KRX API 호출 (기존 로직 유지)
+  // 새 종목 생기면 Yahoo Finance에서 시세 조회
   useEffect(() => {
     const toFetch = stocks.filter(s => !fetchedRef.current.has(s.code))
     if (toFetch.length === 0) return
@@ -70,46 +59,42 @@ export default function StockWidget() {
     toFetch.forEach(s => fetchedRef.current.add(s.code))
     setLoadingSet(prev => { const n = new Set(prev); toFetch.forEach(s => n.add(s.code)); return n })
 
-    toFetch.forEach(({ code, name }) => {
-      fetchStockByName(name)
-        .then(item => { if (item) setStockData(prev => ({ ...prev, [code]: item })) })
-        .catch((e) => {
-          if (e.code === 'ECONNABORTED') setApiError('시세 조회 시간 초과 — 잠시 후 새로고침하세요')
-        })
+    toFetch.forEach(({ code }) => {
+      fetchQuote(code)
+        .then(q => setQuotes(prev => ({ ...prev, [code]: q })))
+        .catch(() => {})
         .finally(() => setLoadingSet(prev => { const n = new Set(prev); n.delete(code); return n }))
     })
   }, [stocks])
 
+  // 종목 검색
   useEffect(() => {
     if (debouncedQuery.trim().length < 1) { setSearchResults([]); return }
     const added = new Set(stocks.map(s => s.code))
     setSearching(true)
-    searchByName(debouncedQuery)
-      .then(items => setSearchResults(items.filter(it => !added.has(it.srtnCd?.trim()))))
+    searchStocks(debouncedQuery)
+      .then(items => setSearchResults(items.filter(it => !added.has(it.symbol))))
       .catch(() => setSearchResults([]))
       .finally(() => setSearching(false))
   }, [debouncedQuery, stocks])
 
-  // [변경] POST /api/stocks — 관심종목 추가
+  // 종목 추가 — Yahoo symbol을 code로 저장
   async function addStock(item) {
-    const code = item.srtnCd?.trim()
-    if (!code || stocks.some(s => s.code === code)) return
-    const { data } = await api.post('/api/stocks', { code, name: item.itmsNm })
+    if (stocks.some(s => s.code === item.symbol)) return
+    const { data } = await api.post('/api/stocks', { code: item.symbol, name: item.name })
     setStocks(prev => [...prev, data])
     setSearchQuery('')
     setSearchResults([])
   }
 
-  // [변경] DELETE /api/stocks/:id — 관심종목 제거 (code 대신 stock 객체 전달)
   async function removeStock(stock) {
     await api.delete(`/api/stocks/${stock.id}`)
     setStocks(prev => prev.filter(s => s.id !== stock.id))
-    setStockData(prev => { const n = { ...prev }; delete n[stock.code]; return n })
+    setQuotes(prev => { const n = { ...prev }; delete n[stock.code]; return n })
     fetchedRef.current.delete(stock.code)
     if (editingCode === stock.code) setEditingCode(null)
   }
 
-  // [변경] openEdit: stock 객체에서 qty/avg_price 직접 읽기 (holdings 맵 불필요)
   function openEdit(stock) {
     if (editingCode === stock.code) { setEditingCode(null); return }
     setEditQty(stock.qty != null ? String(stock.qty) : '')
@@ -117,7 +102,6 @@ export default function StockWidget() {
     setEditingCode(stock.code)
   }
 
-  // [변경] PATCH /api/stocks/:id — 보유 정보 수정
   async function saveHolding(stock) {
     const qty       = parseFloat(editQty)
     const avg_price = parseFloat(String(editAvg).replace(/,/g, ''))
@@ -129,16 +113,14 @@ export default function StockWidget() {
     setEditingCode(null)
   }
 
-  // [변경] pnl: stock 객체에서 qty/avg_price 직접 사용
   function pnl(stock) {
-    const d = stockData[stock.code]
-    if (!stock.qty || !d) return null
-    const current = Number(d.clpr)
-    const cost    = stock.qty * stock.avg_price
-    const value   = stock.qty * current
-    const abs     = value - cost
-    const pct     = (abs / cost) * 100
-    return { abs, pct, value }
+    const q = quotes[stock.code]
+    if (!stock.qty || !q) return null
+    const cost  = stock.qty * stock.avg_price
+    const value = stock.qty * q.price
+    const abs   = value - cost
+    const pct   = (abs / cost) * 100
+    return { abs, pct }
   }
 
   function sign(n) { return n >= 0 ? '+' : '' }
@@ -157,6 +139,7 @@ export default function StockWidget() {
           {showSearch ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
         </Button>
       </CardHeader>
+
       <CardContent className="px-4 pb-4 pt-0 flex-1">
         {apiError && <p className="text-sm text-destructive mb-2">{apiError}</p>}
         {stocks.length === 0 && !showSearch && (
@@ -165,11 +148,10 @@ export default function StockWidget() {
 
         <div className="space-y-1">
           {stocks.map(s => {
-            const d = stockData[s.code]
+            const q         = quotes[s.code]
             const isLoading = loadingSet.has(s.code)
             const p         = pnl(s)
             const isEditing = editingCode === s.code
-            const fltRt     = d ? parseFloat(d.fltRt) : 0
 
             return (
               <div key={s.code}>
@@ -180,22 +162,24 @@ export default function StockWidget() {
                   </button>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-card-foreground truncate">{s.name}</div>
-                    {d?.mrktCtg && <div className="text-xs text-muted-foreground">{d.mrktCtg}</div>}
+                    {q?.market && <div className="text-xs text-muted-foreground">{q.market}</div>}
                   </div>
                   {isLoading ? (
                     <div className="animate-pulse space-y-1 items-end flex flex-col">
                       <div className="h-4 w-14 bg-muted rounded" />
-                      <div className="h-3 w-18 bg-muted rounded" />
+                      <div className="h-3 w-16 bg-muted rounded" />
                     </div>
-                  ) : d ? (
+                  ) : q ? (
                     <div className="text-right flex-shrink-0">
-                      <div className="text-sm font-semibold tabular-nums">{Number(d.clpr).toLocaleString()}원</div>
-                      <div className={`text-xs tabular-nums ${clr(fltRt)}`}>
-                        {sign(fltRt)}{Number(d.vs).toLocaleString()} ({sign(fltRt)}{parseFloat(d.fltRt).toFixed(2)}%)
+                      <div className="text-sm font-semibold tabular-nums">
+                        {q.price.toLocaleString()}원
+                      </div>
+                      <div className={`text-xs tabular-nums ${clr(q.changeRate)}`}>
+                        {sign(q.change)}{q.change.toLocaleString(undefined, { maximumFractionDigits: 0 })} ({sign(q.changeRate)}{q.changeRate.toFixed(2)}%)
                       </div>
                     </div>
                   ) : <span className="text-xs text-muted-foreground">-</span>}
-                  {d && (
+                  {q && (
                     <button onClick={() => openEdit(s)}
                       className={`flex-shrink-0 transition-all ${isEditing ? 'text-primary' : 'text-muted-foreground opacity-0 group-hover:opacity-100'}`}>
                       <Pencil className="w-3.5 h-3.5" />
@@ -203,7 +187,6 @@ export default function StockWidget() {
                   )}
                 </div>
 
-                {/* [변경] p는 stock 객체에서 바로 계산 — holdings 맵 불필요 */}
                 {p && !isEditing && (
                   <div className="ml-5 mb-1 flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">{s.qty}주 × {s.avg_price.toLocaleString()}원</span>
@@ -250,14 +233,14 @@ export default function StockWidget() {
             {searchResults.length > 0 && (
               <div className="space-y-0.5 max-h-44 overflow-y-auto">
                 {searchResults.map(item => (
-                  <button key={item.srtnCd} onClick={() => addStock(item)}
+                  <button key={item.symbol} onClick={() => addStock(item)}
                     className="w-full flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-muted/50 transition-colors text-left">
                     <div>
-                      <span className="text-sm text-card-foreground">{item.itmsNm}</span>
-                      <span className="ml-2 text-xs text-muted-foreground">{item.srtnCd?.trim()}</span>
+                      <span className="text-sm text-card-foreground">{item.name}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">{item.symbol}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{item.mrktCtg}</span>
+                      <span className="text-xs text-muted-foreground">{item.exchange}</span>
                       <Plus className="w-3.5 h-3.5 text-emerald-400" />
                     </div>
                   </button>
